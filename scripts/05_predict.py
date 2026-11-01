@@ -97,7 +97,7 @@ def pred_one(model, img: np.ndarray, patch: int, overlap: int, batch_size: int, 
     batch, coords = [], []
 
     def flush():
-        nonlocal batch, coords, prob, cnt
+        nonlocal batch, coords
         if not batch:
             return
         x = torch.stack(batch).to(device)
@@ -201,8 +201,8 @@ def main():
     ap.add_argument('--overlap', type=int, default=96)
     ap.add_argument('--batch-size', type=int, default=8)
     ap.add_argument('--threshold', type=float, default=None)
-    ap.add_argument('--min-area', type=int, default=5)
-    ap.add_argument('--erode-pixels', type=int, default=2, help='Protected erosion amount. 2 is recommended for "narrow but keep 1px".')
+    ap.add_argument('--min-area', type=int, default=1, help='remove predicted components smaller than this (px)')
+    ap.add_argument('--erode-pixels', type=int, default=0, help='Protected narrowing amount. 0 = off (final evaluation setting); 2 is recommended when producing proposals for correction.')
     ap.add_argument('--erode-kernel', default='cross', choices=['cross', 'ellipse', 'square'], help='cross is least aggressive; square is strongest')
     ap.add_argument('--skeleton-min-area', type=int, default=0, help='Remove tiny skeleton fragments. 0 keeps all skeleton pieces.')
     ap.add_argument('--skeleton-dilate', type=int, default=0, help='0 keeps minimum 1 px. 1 makes protected skeleton about 3 px, usually not needed.')

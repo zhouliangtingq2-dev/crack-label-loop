@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """Run prediction + evaluation for several probability thresholds and tabulate the metrics.
 
 Usage:
@@ -75,7 +77,7 @@ def main():
     ap.add_argument("--split", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--thresholds", nargs="+", required=True)
-    ap.add_argument("--patch-size", type=int, default=256)
+    ap.add_argument("--patch-size", type=int, default=None, help="default: the patch size stored in the checkpoint")
     ap.add_argument("--overlap", type=int, default=96)
     ap.add_argument("--batch-size", type=int, default=24)
     ap.add_argument("--min-area", type=int, default=1)
@@ -105,13 +107,12 @@ def main():
         if pred_dir.exists():
             shutil.rmtree(pred_dir)
 
-        run_cmd([
+        cmd = [
             sys.executable,
             str(HERE / "05_predict.py"),
             "--checkpoint", str(checkpoint),
             "--images", str(input_dir),
             "--out", str(pred_dir),
-            "--patch-size", str(args.patch_size),
             "--overlap", str(args.overlap),
             "--batch-size", str(args.batch_size),
             "--threshold", str(th),
@@ -119,7 +120,10 @@ def main():
             "--erode-pixels", str(args.erode_pixels),
             "--erode-kernel", args.erode_kernel,
             "--skeleton-dilate", str(args.skeleton_dilate),
-        ])
+        ]
+        if args.patch_size is not None:
+            cmd += ["--patch-size", str(args.patch_size)]
+        run_cmd(cmd)
 
         run_cmd([
             sys.executable,

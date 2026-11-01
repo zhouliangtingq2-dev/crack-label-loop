@@ -157,13 +157,18 @@ def main():
     s1_test = predict_and_eval(r1, "test", test / "images", tm_test, args, log)
 
     # ---------------- "human correction": in real use you open round1/pred_pool/affinity_png/*.png in an image
-    # editor, fix the proposal, and save it into labelled/labels/. Here the corrected labels are the hidden truth.
+    # editor, fix the proposal, and save it next to the other labels. Here the corrected labels are the hidden
+    # truth, i.e. a *perfect* correction. The enlarged set is written to its own folder (data/ is never modified).
+    labelled2 = root / "labelled_round2"
+    if labelled2.exists():
+        shutil.rmtree(labelled2)
+    shutil.copytree(labelled, labelled2)
     for p in sorted((pool / "images").iterdir()):
-        shutil.copy2(p, labelled / "images" / p.name)
-        shutil.copy2(pool / "hidden_labels" / p.name, labelled / "labels" / p.name)
+        shutil.copy2(p, labelled2 / "images" / p.name)
+        shutil.copy2(pool / "hidden_labels" / p.name, labelled2 / "labels" / p.name)
 
     # ---------------- round 2: retrain on labelled + corrected pool, evaluate on the held-out test set
-    r2 = pipeline_round("round2", root, labelled, args, log)
+    r2 = pipeline_round("round2", root, labelled2, args, log)
     s2_test = predict_and_eval(r2, "test", test / "images", tm_test, args, log)
 
     # ---------------- report
@@ -182,6 +187,8 @@ def main():
              "| test (held out) | 2 | " + " | ".join(f"{s2_test[k]:.3f}" for k in keys) + " |", "",
              "![result](demo_result.png)", "",
              "columns: input | round-1 proposal | round-2 result | ground truth (orange)", "",
+             "note: the 'human correction' between the rounds is simulated by revealing the hidden ground truth of the pool,",
+             "so the round-2 gain shows the effect of adding correctly labelled images, not the effort saved by a human.", "",
              "## timing", "", "| step | seconds |", "|---|---|"] + [f"| {n} | {t:.1f} |" for n, t in log] + \
             ["", f"total {time.time() - t_all:.0f} s"]
     (rep / "report.md").write_text("\n".join(lines), encoding="utf-8")

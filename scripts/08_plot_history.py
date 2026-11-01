@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """Plot loss and validation metrics from a training history.csv.
 
 Usage:
@@ -45,7 +47,7 @@ def main():
 
     rows = read_history(history_path)
 
-    epoch_name, epochs = get_col(rows, ["epoch", "epochs"])
+    _, epochs = get_col(rows, ["epoch", "epochs"])
     if epochs is None:
         epochs = list(range(1, len(rows) + 1))
 
