@@ -1,0 +1,30 @@
+name: demo-loop (CPU smoke test)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install PyTorch (CPU) and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
+      - name: Run the two-round loop on tiny synthetic data
+        run: |
+          python scripts/demo_loop.py --root demo_runs --no-pretrained --size 256 --n-labelled 4 --n-pool 3 --n-test 2 --epochs 2 --steps 15
+          cat demo_runs/report/report.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: demo-report
+          path: demo_runs/report/

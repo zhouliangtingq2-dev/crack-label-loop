@@ -1,0 +1,19 @@
+# data, runs and weights never go into the repository
+data/
+demo_data/
+demo_runs/
+runs/
+*.pth
+*.pt
+*.zip
+# python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+# editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

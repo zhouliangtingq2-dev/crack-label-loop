@@ -1,0 +1,11 @@
+# Install PyTorch first (GPU: --index-url https://download.pytorch.org/whl/cu128 ; CPU: .../cpu), then: pip install -r requirements.txt
+numpy>=1.24
+opencv-python>=4.8
+Pillow>=10.0
+pandas>=2.0
+matplotlib>=3.7
+tqdm>=4.66
+albumentations>=1.4
+scikit-image>=0.22
+scipy>=1.10
+segmentation-models-pytorch>=0.3.3
