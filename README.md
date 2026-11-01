@@ -1,5 +1,7 @@
 # crack-label-loop
 
+[![demo-loop (CPU smoke test)](https://github.com/zhouliangtingq2-dev/crack-label-loop/actions/workflows/demo.yml/badge.svg)](https://github.com/zhouliangtingq2-dev/crack-label-loop/actions/workflows/demo.yml)
+
 **コンクリート壁面写真のひび割れを、人手ラベリング → 学習 → 自動提案 → 修正 → 再学習のループで効率よくラベル付けするパイプライン**
 
 [English README](README_en.md)
