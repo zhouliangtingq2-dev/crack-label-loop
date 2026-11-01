@@ -1,11 +1,11 @@
-# Install PyTorch first (GPU: --index-url https://download.pytorch.org/whl/cu128 ; CPU: .../cpu), then: pip install -r requirements.txt
-numpy>=1.24
-opencv-python>=4.8
+# Install PyTorch first (GPU: pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128 ;
+# CPU: ... --index-url https://download.pytorch.org/whl/cpu), then: pip install -r requirements.txt
+# Tested with Python 3.11 / 3.13, torch 2.x, albumentations 2.0.x, segmentation-models-pytorch 0.6.
+numpy>=1.24,<3
+opencv-python>=4.8,<6
 Pillow>=10.0
-pandas>=2.0
 matplotlib>=3.7
 tqdm>=4.66
-albumentations>=1.4
+albumentations>=2.0,<3
 scikit-image>=0.22
-scipy>=1.10
-segmentation-models-pytorch>=0.3.3
+segmentation-models-pytorch>=0.3.3,<1
