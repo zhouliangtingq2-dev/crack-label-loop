@@ -7,8 +7,8 @@
 [日本語 README](README.md)
 
 - **Problem** — a full-scale RC wall loading test produced 60+ wall photographs 4000–6800 px wide, and every-pixel crack labels were needed for width/length statistics. Painting them all by hand did not scale.
-- **Approach** — paint only the first series by hand → the model proposes labels for the rest as *transparent PNGs that open directly in an image editor* → people **correct** instead of **draw** → the corrected files go back in as training labels.
-- **Outcome** — starting from 41 hand-painted images, 20 images of another series were labelled by correcting proposals, giving a 62-image dataset. On 7 held-out test images: micro IoU 0.53 / recall 0.78 (U-Net + ResNet50, threshold 0.40).
+- **Approach** — paint only the first four or so images by hand → the model proposes the label for the next photograph as a *transparent PNG that opens directly in an image editor* → people **correct** instead of **draw** → the corrected file goes back in as a training label, the model is retrained, and the next photograph follows.
+- **Outcome** — only the first four or so images were painted from scratch; the remaining 37 of the 41-image series, and 20 images of another series, were labelled by correcting proposals, giving a 62-image dataset. Work that would have taken about 80 hours fully by hand took about 20 hours (my own estimate). On 7 held-out test images: micro IoU 0.53 / recall 0.78 (U-Net + ResNet50, threshold 0.40).
 
 This tool was built because the laboratory experiment needed it, and it was used in practice. The repository contains **the code and a synthetic demo-data generator only**. The experiment photographs, the hand-painted labels and the weights trained on them belong to the laboratory and are not published; the numbers obtained on them are in [docs/results_real_wall.md](docs/results_real_wall.md).
 
@@ -119,7 +119,7 @@ Tested with Python 3.11 / 3.13, torch 2.x, albumentations 2.0.x, segmentation-mo
 
 ## Results on real photographs
 
-62 photographs from the laboratory's full-scale RC wall test (41 hand-painted and 20 proposal-corrected among them); U-Net + ResNet34 / ResNet50 and DeepLabV3+ (ResNet50) compared under the same conditions (threshold 0.40, no post-processing). On the 7 held-out test images U-Net + ResNet50 was best with micro IoU 0.53 / Dice 0.69 / recall 0.78 (validation, 9 images: IoU 0.60 / Dice 0.75) and was adopted; the operating threshold was set to 0.50 from a sweep on the validation split. The split is per photograph, but other loading steps of the same specimen appear in both train and test, so these numbers describe the quality of proposals for *unlabelled photographs of the same wall*, not generalisation to unseen walls. Details in [docs/results_real_wall.md](docs/results_real_wall.md) (numbers only; photographs are not published).
+62 photographs from the laboratory's full-scale RC wall test (labels: the first four or so painted from scratch, the rest produced by correcting proposals); U-Net + ResNet34 / ResNet50 and DeepLabV3+ (ResNet50) compared under the same conditions (threshold 0.40, no post-processing). On the 7 held-out test images U-Net + ResNet50 was best with micro IoU 0.53 / Dice 0.69 / recall 0.78 (validation, 9 images: IoU 0.60 / Dice 0.75) and was adopted; the operating threshold was set to 0.50 from a sweep on the validation split. The split is per photograph, but other loading steps of the same specimen appear in both train and test, so these numbers describe the quality of proposals for *unlabelled photographs of the same wall*, not generalisation to unseen walls. Most labels were produced by correcting the model's own proposals, so some of the model's habits (line thickness, for example) may remain in the labels and the scores may be slightly flattering. Details in [docs/results_real_wall.md](docs/results_real_wall.md) (numbers only; photographs are not published).
 
 ## Limitations and next steps
 
