@@ -6,7 +6,10 @@ Design points for thin cracks:
   * patches are sampled around crack pixels with probability --pos-prob (default 0.85) so that the
     extremely sparse positive class is seen often enough;
   * loss = 0.6 * BCE(pos_weight) + 1.0 * soft Dice, computed only on valid pixels (255 = ignore);
-  * validation uses a sliding grid over whole images at the same patch size;
+  * validation uses a sliding grid over whole images at the same patch size; train/val IoU, Dice, recall and
+    precision in history.csv are pooled over all pixels of the epoch (same definition as 06_evaluate.py);
+  * the whole training split is loaded into RAM once (about 100 MB per 25-megapixel image); reduce the
+    number of augmented copies or the image size if memory is short;
   * mixed precision on CUDA; checkpoints store model name, encoder, patch size and threshold so that
     05_predict.py needs no extra arguments.
 
@@ -16,7 +19,7 @@ Usage:
 from __future__ import annotations
 import argparse, csv, random, time
 from pathlib import Path
-from typing import List, Dict, Tuple
+from typing import List
 import cv2, numpy as np
 from PIL import Image
 import torch
@@ -60,13 +63,10 @@ def pad(img,m,patch):
     return img,m
 
 def build_train_tf():
-    """Photometric + mild geometric augmentation; written to work with albumentations 1.4 and 2.x."""
-    try:   # albumentations >= 2.0
-        noise = A.GaussNoise(std_range=(0.005, 0.02), p=0.15)
-        affine = A.Affine(translate_percent=0.02, scale=(0.92, 1.08), rotate=(-8, 8), border_mode=cv2.BORDER_REFLECT_101, fill_mask=0, p=0.45)
-    except TypeError:   # albumentations 1.x
-        noise = A.GaussNoise(var_limit=(2.0, 12.0), p=0.15)
-        affine = A.Affine(translate_percent=0.02, scale=(0.92, 1.08), rotate=(-8, 8), mode=cv2.BORDER_REFLECT_101, mask_value=0, p=0.45)
+    """Photometric + mild geometric augmentation (albumentations >= 2.0 API; see requirements.txt).
+    The original experiments used ShiftScaleRotate (albumentations 1.x); Affine below is the equivalent."""
+    noise = A.GaussNoise(std_range=(0.005, 0.02), p=0.15)
+    affine = A.Affine(translate_percent=0.02, scale=(0.92, 1.08), rotate=(-8, 8), border_mode=cv2.BORDER_REFLECT_101, fill_mask=0, p=0.45)
     return A.Compose([
         A.HorizontalFlip(p=0.5), A.VerticalFlip(p=0.25), A.RandomRotate90(p=0.25), affine,
         A.RandomBrightnessContrast(0.12, 0.12, p=0.35), A.RandomGamma((90, 110), p=0.25), noise,
@@ -140,15 +140,18 @@ class Loss(nn.Module):
         dice=1-(2*inter+1)/(denom+1)
         return self.bw*bce+self.dw*dice
 
-def metrics(logits,target,thr=0.35):
+def counts(logits,target,thr=0.35):
+    """tp/fp/fn over the valid pixels of a batch (ignore=255 excluded)."""
     prob=torch.sigmoid(logits[:,0]); valid=target!=IGNORE; y=target==1; pred=prob>thr
     pred=pred[valid]; y=y[valid]
-    tp=(pred & y).sum().double(); fp=(pred & ~y).sum().double(); fn=(~pred & y).sum().double()
-    iou=(tp/(tp+fp+fn+1e-7)).item(); dice=(2*tp/(2*tp+fp+fn+1e-7)).item(); rec=(tp/(tp+fn+1e-7)).item(); prec=(tp/(tp+fp+1e-7)).item()
-    return iou,dice,rec,prec
+    return float((pred & y).sum()), float((pred & ~y).sum()), float((~pred & y).sum())
+
+def pooled(tp,fp,fn):
+    """IoU, Dice, recall, precision pooled over all pixels seen (same definition as 06_evaluate.py's micro metrics)."""
+    return tp/(tp+fp+fn+1e-7), 2*tp/(2*tp+fp+fn+1e-7), tp/(tp+fn+1e-7), tp/(tp+fp+1e-7)
 
 def run_epoch(model,loader,opt,scaler,loss_fn,device,train=True,amp=True,thr=0.35):
-    model.train(train); losses=[]; sums=np.zeros(4); n=0
+    model.train(train); losses=[]; tp=fp=fn=0.0
     pbar=tqdm(loader,desc='train' if train else 'val',leave=False)
     for img,m in pbar:
         img=img.to(device); m=m.to(device)
@@ -160,9 +163,9 @@ def run_epoch(model,loader,opt,scaler,loss_fn,device,train=True,amp=True,thr=0.3
                 scaler.scale(loss).backward(); scaler.step(opt); scaler.update()
         losses.append(float(loss.detach().cpu()))
         with torch.no_grad():
-            vals=metrics(logits.detach(),m,thr); sums+=np.array(vals); n+=1
-        pbar.set_postfix(loss=np.mean(losses),iou=sums[0]/n,dice=sums[1]/n)
-    return float(np.mean(losses)), tuple((sums/max(1,n)).tolist())
+            a,b,c=counts(logits.detach(),m,thr); tp+=a; fp+=b; fn+=c
+        pbar.set_postfix(loss=np.mean(losses),iou=pooled(tp,fp,fn)[0],dice=pooled(tp,fp,fn)[1])
+    return float(np.mean(losses)), pooled(tp,fp,fn)
 
 def main():
     ap=argparse.ArgumentParser()
@@ -178,9 +181,9 @@ def main():
     print('train',len(train),'val',len(val),'data',args.data)
     tr=PatchDS(args.data,train,args.patch_size,args.steps_per_epoch*args.batch_size,pos_prob=args.pos_prob,augment=True)
     va=GridDS(args.data,val,args.patch_size,overlap=min(128,args.patch_size//2))
-    tr_loader=DataLoader(tr,batch_size=args.batch_size,shuffle=False,num_workers=args.num_workers,pin_memory=True)
-    va_loader=DataLoader(va,batch_size=args.batch_size,shuffle=False,num_workers=args.num_workers,pin_memory=True)
     device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    tr_loader=DataLoader(tr,batch_size=args.batch_size,shuffle=False,num_workers=args.num_workers,pin_memory=(device.type=='cuda'))
+    va_loader=DataLoader(va,batch_size=args.batch_size,shuffle=False,num_workers=args.num_workers,pin_memory=(device.type=='cuda'))
     model=make_model(args.model,args.encoder,pretrained=not args.no_pretrained).to(device)
     opt=torch.optim.AdamW(model.parameters(),lr=args.lr,weight_decay=1e-4)
     sched=torch.optim.lr_scheduler.CosineAnnealingLR(opt,T_max=args.epochs)

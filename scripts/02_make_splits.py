@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """Split the processed dataset into train / val / test lists (by image stem).
 
 Usage:
@@ -25,8 +27,10 @@ def main():
     stems = [p.stem for p in masks]
     random.Random(args.seed).shuffle(stems)
     n = len(stems)
-    if n < 3:
-        raise SystemExit("Need at least 3 images to make train/val/test split.")
+    if args.train + args.val + args.test > 1.0 + 1e-6:
+        raise SystemExit(f"train+val+test = {args.train + args.val + args.test:.2f} > 1")
+    if n < (2 if args.test <= 0 else 3):
+        raise SystemExit("Need at least 3 images (2 when --test 0) to make a split.")
     n_train = max(1, int(round(n * args.train)))
     n_val = max(1, int(round(n * args.val)))
     if args.test <= 0:

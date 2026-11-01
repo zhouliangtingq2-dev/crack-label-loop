@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """Pixel-level evaluation of predicted label PNGs (#009BFF on transparent) against masks_id ground truth.
 Pixels with mask value 255 (ignore / spalling) are excluded. Writes per-image CSV and a *_summary.csv
 with micro (pixel-pooled) and mean (per-image) IoU / Dice / precision / recall.

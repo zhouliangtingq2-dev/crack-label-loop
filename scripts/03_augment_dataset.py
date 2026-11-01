@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """Offline augmentation of the *training* split only: 90-degree rotations and flips (no interpolation,
 so thin masks stay exact). val/test are copied unchanged.
 
@@ -71,7 +73,7 @@ def augment_pairs(image, mask):
     return variants
 
 
-def copy_one(input_dir, out_dir, name, split_name, augment=False):
+def copy_one(input_dir, out_dir, name, augment=False):
     img_path = find_file(input_dir / "images", name)
     mask_path = find_file(input_dir / "masks_id", name)
 
@@ -136,20 +138,20 @@ def main():
 
     # augment the training split only
     for name in train:
-        saved = copy_one(input_dir, out_dir, name, "train", augment=True)
+        saved = copy_one(input_dir, out_dir, name, augment=True)
         split_outputs["train"].extend(saved)
         for s in saved:
             metadata.append(["train", name, s])
 
     # val/test: originals only
     for name in val:
-        saved = copy_one(input_dir, out_dir, name, "val", augment=False)
+        saved = copy_one(input_dir, out_dir, name, augment=False)
         split_outputs["val"].extend(saved)
         for s in saved:
             metadata.append(["val", name, s])
 
     for name in test:
-        saved = copy_one(input_dir, out_dir, name, "test", augment=False)
+        saved = copy_one(input_dir, out_dir, name, augment=False)
         split_outputs["test"].extend(saved)
         for s in saved:
             metadata.append(["test", name, s])

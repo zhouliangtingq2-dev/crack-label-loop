@@ -25,7 +25,7 @@ Usage:
   python scripts/01_prepare_dataset.py --images data/raw_images --labels data/raw_labels --out data/processed
 """
 from __future__ import annotations
-import argparse, csv
+import argparse, csv, shutil
 from pathlib import Path
 from typing import Dict
 import numpy as np
@@ -110,6 +110,7 @@ def main():
     ap.add_argument('--alpha-threshold', type=int, default=10)
     ap.add_argument('--overwrite', action='store_true')
     args=ap.parse_args()
+    if args.overwrite and args.out.exists(): shutil.rmtree(args.out)
     for sub in ['images','masks_id','preview_color','preview_overlay']:
         (args.out/sub).mkdir(parents=True, exist_ok=True)
     images=list_by_stem(args.images); labels=list_by_stem(args.labels)
