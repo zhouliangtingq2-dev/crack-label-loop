@@ -12,6 +12,8 @@
 
 This tool was built because the laboratory experiment needed it, and it was used in practice. The repository contains **the code and a synthetic demo-data generator only**. The experiment photographs, the hand-painted labels and the weights trained on them belong to the laboratory and are not published; the numbers obtained on them are in [docs/results_real_wall.md](docs/results_real_wall.md).
 
+Related repositories (other processing used in the same laboratory experiments): [wall-damage-quantification](https://github.com/zhouliangtingq2-dev/wall-damage-quantification) (spalling extraction, fusion with cracks, mm/px from markers and damage quantities; the sister repository of this one) and [column-marker-tracking](https://github.com/zhouliangtingq2-dev/column-marker-tracking) (camera-shake correction and marker tracking in RC column test videos to obtain the member angle and axial deformation).
+
 ![demo](docs/img/demo_result.png)
 
 *Synthetic demo (~5 min on CPU, one example run): input | round-1 proposals | round-2 result after 6 corrected images were fed back | ground truth (orange). In this run the round marker that was falsely labelled in round 1 disappears in round 2. Results vary with the random seed and the environment (on another machine the same seed kept the marker).*
@@ -125,7 +127,7 @@ Tested with Python 3.11 / 3.13, torch 2.x, albumentations 2.0.x, segmentation-mo
 
 - The tool assumes a human corrects the proposals; the output is not accurate enough for width statistics without correction (especially cracks below 1 px).
 - Training images are held in RAM, so hundreds of 25-MP photographs need a lot of memory (lazy loading is a candidate improvement).
-- Spalling training, fusion with cracks, mm/px estimation from markers and skeleton → width-distribution extraction run as separate scripts and are not included here.
+- Spalling training, fusion with cracks, mm/px estimation from markers and damage quantities (crack length, spalled area and so on) are published together in the sister repository [wall-damage-quantification](https://github.com/zhouliangtingq2-dev/wall-damage-quantification). Width distributions from the skeleton are not included.
 - Image-based measurement of crack **width** itself (sub-pixel) is a separate ongoing research topic.
 
 ## Development note

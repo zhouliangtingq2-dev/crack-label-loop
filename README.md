@@ -12,6 +12,8 @@
 
 研究室の実大 RC 壁の載荷実験で必要になり、実際に使ったツールです。このリポジトリには**コードと合成デモデータの生成スクリプトだけ**を含めています。実験写真・手描きラベル・実写真で学習した重みは研究室のデータのため公開していません（数値結果は [docs/results_real_wall.md](docs/results_real_wall.md)）。
 
+関連リポジトリ（同じ研究室の実験で使った処理）：[wall-damage-quantification](https://github.com/zhouliangtingq2-dev/wall-damage-quantification)（剥落の抽出、ひび割れとの統合、マーカーによる mm/px の推定、損傷量の集計。このリポジトリの姉妹編）、[column-marker-tracking](https://github.com/zhouliangtingq2-dev/column-marker-tracking)（RC 柱の載荷実験の動画から、カメラの揺れを除いてマーカーを追跡し、部材角と軸方向変形を求める）。
+
 ![demo](docs/img/demo_result.png)
 
 *合成デモ（CPU 約 5 分、1 回の実行例）：左から 入力 ｜ 1 周目の自動提案 ｜ 修正 6 枚を戻して再学習した 2 周目 ｜ 正解（橙）。この実行例では 1 周目に誤検出していた丸いマーカーが 2 周目で消えている。結果は乱数・実行環境で変わる（別環境の同一シードではマーカーが残った）。*
@@ -125,7 +127,7 @@ python scripts/07_threshold_sweep.py --checkpoint runs/r1/best_model.pth --image
 
 - 現状は「提案を人が直す」前提のツールで、無修正で幅統計に使える精度ではない（特に 1 px 未満のひび割れ）。
 - 学習画像を RAM に載せる実装のため、25 MP 級の写真を数百枚扱うにはメモリが要る（遅延読み込みが改善候補）。
-- 剥落の学習・ひび割れとの統合・マーカーによる mm/px 推定・骨格→幅分布の抽出は別スクリプトで運用しており、このリポジトリには含めていない。
+- 剥落の学習・ひび割れとの統合・マーカーによる mm/px 推定・損傷量（ひび割れの長さ、剥落の面積など）の抽出は、姉妹リポジトリ [wall-damage-quantification](https://github.com/zhouliangtingq2-dev/wall-damage-quantification) にまとめて公開した。骨格からの幅分布の抽出は含めていない。
 - ひび割れ**幅**そのものの画像計測（サブピクセル）は別の研究テーマとして進行中。
 
 ## 開発について
